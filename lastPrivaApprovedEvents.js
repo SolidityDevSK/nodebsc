@@ -50,34 +50,42 @@ async function processEvent(log) {
     return processedEvent;
 }
 
+
 async function getPastEvents(fromBlock, toBlock) {
-    const maxBlockRange = 50000;
-    const allEvents = [];
+    const maxBlockRange = 5;
     const events = ["Approval"];
-
+    const allEvents = [];
+  
     for (let startBlock = fromBlock; startBlock <= toBlock; startBlock += maxBlockRange) {
-        const endBlock = Math.min(startBlock + maxBlockRange - 1, toBlock);
-
-        for (const event of events) {
-            const filter = contract.filters[event]();
-            const logs = await contract.queryFilter(filter, startBlock, endBlock);
-
-            for (const log of logs) {
-                if (log.args[1] === config.marketplaceContractAddress || log.args[1] === config.domainContractAddress) {
-                    const eventData = await processEvent(log);
-                    allEvents.push(eventData);
-                }
-            }
+      const endBlock = Math.min(startBlock + maxBlockRange - 1, toBlock);
+  
+      for (const event of events) {
+        const filter = contract.filters[event]();
+        const logs = await contract.queryFilter(filter, startBlock, endBlock);
+  
+        for (const log of logs) {
+          const eventData = await processEvent(log);
+          allEvents.push(eventData);
         }
+      }
     }
-
+  
     return allEvents;
-}
+  }
+  
+
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
 
 async function main() {
     const currentBlock = await provider.getBlockNumber();
-    const events = await getPastEvents(6150796, currentBlock);
+    const events = await getPastEvents(39916530, currentBlock);
+   await sleep(10000)
     events.sort((a, b) => a.BlockNumber - b.BlockNumber);
+  
     for (const event of events) {
         await saveToDatabase(event);
     }

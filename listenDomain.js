@@ -2,7 +2,7 @@ const { ethers } = require('ethers');
 const { MongoClient } = require('mongodb');
 const config = require('./config');
 
-const provider = new ethers.WebSocketProvider(config.bscWSNodeUrl);
+const provider = new ethers.WebSocketProvider(config.bsc2WSNodeUrl);
 const contract = new ethers.Contract(config.domainContractAddress, config.domainAbi, provider);
 
 async function saveToDatabase(eventData) {
@@ -36,16 +36,23 @@ async function saveToDatabase(eventData) {
                 console.log(`Event with ItemId ${eventData.ItemId} already exists and is not an approval or transfer for the marketplace.`);
             }
             return;
-        } else {
-            const insertResult = await collection.insertOne(eventData);
-            const updateFields = {}
-            updateFields.DomainApprovalBalance = Number(eventData.Price);
-            const updateApprovalBalance = await approvedCollection.updateOne(
-                { From: eventData.From },
-                { $inc: updateFields }
-            )
-            console.log(`New event inserted into minteddomain with _id: ${insertResult.insertedId}`);
-            console.log(`Aprroval balance is updated: ${updateApprovalBalance.matchedCount}`)
+        } else  {
+                if (eventData.Type != "Transfer"){
+                    const insertResult = await collection.insertOne(eventData);
+                    console.log(`New event inserted into minteddomain with _id: ${insertResult.insertedId}`);
+                }else{
+                    const updateFields = {}
+                    updateFields.DomainApprovalBalance = Number(eventData.Price);
+                    const updateApprovalBalance = await approvedCollection.updateOne(
+                        { From: eventData.From },
+                        { $inc: updateFields }
+                    )
+                    console.log(`Aprroval balance is updated: ${updateApprovalBalance.matchedCount}`)
+                }
+         
+           
+         
+       
         }
     } catch (error) {
         console.error('Error saving to database:', error);
@@ -122,7 +129,8 @@ async function main() {
         contract.on(event, async (...args) => {
             const event = args[args.length - 1];
             await processEvent(event);
-        });
+        })
+
     });
 }
 

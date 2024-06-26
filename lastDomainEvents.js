@@ -57,7 +57,7 @@ async function processEvent(log) {
   switch (log.fragment.name) {
     case "DomainMinted":
       processedEvent = {
-        Type: log.fragment.name,
+        Type: "DomainMinted",
         ItemId: log.args[1].toString(),
         From: log.args[0],
         To: 'N/A',
@@ -98,11 +98,9 @@ async function processEvent(log) {
 }
 
 async function getPastEvents(fromBlock, toBlock) {
-  const maxBlockRange = 50000;
+  const maxBlockRange = 5;
   const events = [
-    "DomainMinted",
-    "Approval",
-    "Transfer"
+    "DomainMinted"
   ];
   const allEvents = [];
 
@@ -123,10 +121,15 @@ async function getPastEvents(fromBlock, toBlock) {
   return allEvents;
 }
 
-async function main() {
-  const currentBlock = await provider.getBlockNumber();
-  const events = await getPastEvents(6150796, currentBlock);
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
+async function main() {
+ const currentBlock = await provider.getBlockNumber();
+  const events = await getPastEvents(39942210, currentBlock);
+await sleep(1000)
+ 
   // Olayları blok numarasına göre sıralama
   events.sort((a, b) => a.BlockNumber - b.BlockNumber);
 
